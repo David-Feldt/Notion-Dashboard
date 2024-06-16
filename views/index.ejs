@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charts from Notion</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    Test                                                                                                                                                        
+    <canvas id="timeChart" width="400" height="200"></canvas>
+    <canvas id="moodChart" width="400" height="200"></canvas>
+    <canvas id="habitChart" width="400" height="200"></canvas>
+
+    <script>
+        const data = <%- JSON.stringify(data2) %>;
+        const mood = data.map(item => item.properties.Mood.number);
+        const sleep = data.map(item => item.properties.Sleep.number);
+        const exercise = data.map(item => item.properties.Exercise.checkbox ? 1 : 0);  
+        const habits = data.reduce((acc, item) => {
+            //const habit = Object.keys(item.properties)[0];
+            Object.keys(item.properties).forEach(habit => {
+                const d = item.properties[habit];
+
+                if (d.type === 'checkbox') {
+                if (!acc[habit]) {
+                    acc[habit] = [];
+                }
+                acc[habit].push(d.checkbox ? 1 : 0);
+                }
+            });
+            // const d = item.properties[habit];
+            // console.log(habit);
+
+            // if (d.type === 'checkbox') {
+            //     if (!acc[habit]) {
+            //     acc[habit] = [];
+            //     }
+            //     acc[habit].push(d.checkbox ? 1 : 0);
+            // }
+
+            return acc;
+            }, {});
+        console.log('habits');
+        console.log(habits);
+        const date = data.map(item => item.properties.Date.title[0].plain_text);
+
+        habits['sleep'] = sleep;
+        habits['mood'] = mood;
+        habits['dates'] = date;
+        // let combined = date.map((d, i) =>({
+        //     date: new Date(d),
+        //     sleep: sleep[i],
+        //     mood: mood[i],
+        //     exercise: exercise[i]
+        // }));
+        const dateArray = habits.dates.map(date => new Date(date));
+        const indices = dateArray
+            .map((date, index) => ({ date, index }))
+            .sort((a, b) => a.date - b.date)
+            .map(obj => obj.index);
+
+        // Sort all arrays in the JSON object based on the sorted indices
+        const sortedData = {};
+        Object.keys(habits).forEach(key => {
+            sortedData[key] = indices.map(index => habits[key][index]);
+        });
+        
+        //combined.sort((a,b) => a.date - b.date);
+        let sort_date = sortedData['dates'];
+        let sort_sleep = sortedData['sleep'];
+        let sort_mood = sortedData['mood'];
+        let sort_exercise = sortedData['Exercise'];
+        // let sort_date = combined.map(item => item.date.toISOString().split('T')[0]);
+        // let sort_sleep = combined.map(item => item.sleep);
+        // let sort_mood = combined.map(item => item.mood);
+        // let sort_exercise = combined.map(item => item.exercise);
+        console.log('combined');
+        //console.log(combined);
+        console.log(sort_date);
+        console.log(sort_sleep);
+        console.log(sort_mood);
+        //const labels = data.map(item => item.properties.Name.title[0].text.content);
+        //const values = data.map(item => item.properties.Value.number);
+        const labels = sort_date;
+        const values = sort_sleep;
+        const values2 = sort_mood;
+        const values3 = sort_exercise;
+
+        delete sortedData['dates'];
+        delete sortedData['sleep'];
+        delete sortedData['mood'];
+
+        const datasetArray = [];
+        for (const [label, values] of Object.entries(sortedData)) {
+            const habitObject = {
+                label: label,
+                data: values,
+                backgroundColor: 'rgba(34, 255, 0, 0.2)',
+                borderColor: 'rgba(0, 0, 0, 0.2)',
+                borderWidth: 1
+            };
+            const habitObjectinv = {
+                label: label,
+                data: values.map(item => item === 0 ? 1 : 0),
+                backgroundColor: 'rgba(255, 17, 0, 0.2)',
+                borderColor: 'rgba(0, 0, 0, 0.2)',
+                borderWidth: 1
+            };
+            datasetArray.push(habitObject);
+            datasetArray.push(habitObjectinv);
+        }
+        const ctx = document.getElementById('timeChart').getContext('2d');
+        const ctx2 = document.getElementById('moodChart').getContext('2d');
+        const ctx3 = document.getElementById('habitChart').getContext('2d');
+        const habitArray = Object.keys(sortedData);
+        const timeChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Sleep',
+                    data: values,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Time Spent'
+                    }
+                }
+            }
+        })
+        const moodChart = new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Mood',
+                    data: values2,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Mood'
+                    }
+                }
+            }
+        })
+        const habitChart = new Chart(ctx3, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: datasetArray,
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        stacked: true, // Stack the bars
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Date',
+                        }
+                    },
+                    y: {
+                        stacked: true, // Stack the bars
+                        beginAtZero: true,
+                        max: 10,
+                        ticks: {
+                            stepSize: 1,
+                            callback: function(value,index,values) {
+                                return habitArray[value];
+                                
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Completed'
+                        }
+                    }
+                },
+                plugins: {
+                title: {
+                    display: true,
+                    text: 'Habits'
+                },
+                legend: {
+                    display: false
+                }
+            }
+
+            },
+        });
+    </script>
+</body>
+</html>
+
