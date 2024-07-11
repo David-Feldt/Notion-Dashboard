@@ -1,18 +1,15 @@
 {
-  "name": "notion-dashboard",
+  "name": "my-electron-app",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "electron ."
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "@notionhq/client": "^2.2.15",
-    "dotenv": "^16.4.5",
-    "ejs": "^3.1.10",
-    "express": "^4.19.2"
+    "electron": "^15.3.1",
+    "express": "^4.17.1",
+    "@notionhq/client": "^0.4.1",
+    "dotenv": "^10.0.0",
+    "ejs": "^3.1.6"
   }
 }
